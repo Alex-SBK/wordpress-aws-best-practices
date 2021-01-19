@@ -1,4 +1,7 @@
-*.tfstate.backup
+# tfstate files
+*.tfstate.*
+*.tfstate
+
 .terraform
 *.iml
 *.lock.*
