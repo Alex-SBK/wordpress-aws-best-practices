@@ -9,3 +9,22 @@ variable "server_port" {
   type = number
   default = 80
 }
+
+variable "subnets" {
+  description = "Map of subnets parameters"
+  type = map
+
+  default = {
+    subnetdA = {
+      cidr_block = "10.0.11.0/24"
+      name = "SubnetA"
+      av_zone_index = 0
+    }
+    subnetB = {
+      cidr_block = "10.0.21.0/24"
+      name = "SubnetB"
+      av_zone_index = 1
+    }
+  }
+
+}
