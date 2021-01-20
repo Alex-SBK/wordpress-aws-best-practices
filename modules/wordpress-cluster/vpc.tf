@@ -49,3 +49,13 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
      Name = "alex-sbk-wordpress-default-route-for-public-subnets"
    }
  }
+
+ # Get info about our public subnets
+ data "aws_subnet_ids" "alex-sbk-public-subnets" {
+   depends_on = [aws_subnet.alex_sbk_wordpress_subnets]
+   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+ }
+
+ output "subnets" {
+   value = data.aws_subnet_ids.alex-sbk-public-subnets.ids
+ }
