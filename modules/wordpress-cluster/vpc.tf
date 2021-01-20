@@ -27,35 +27,46 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
  }
  # And create the subnets: A and B
 
- resource "aws_subnet" "alex_sbk_wordpress_subnets" {
+ resource "aws_subnet" "alex_sbk_wordpress_subnetA" {
 
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
-   for_each = var.subnets
-   cidr_block = each.value.cidr_block
-  availability_zone = data.aws_availability_zones.current_zones_info.names[each.value.av_zone_index]
+   cidr_block = "10.0.11.0/24"
+   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
-    Name = "Alex-Sbk-wordpress-subnet-${each.value.name}"
+    Name = "Alex-Sbk-wordpress-subnet-SubnetA"
   }
 }
 
- # Now let's add default route for public subnets
- resource "aws_route_table" "public_route_for_public_subnets" {
+ resource "aws_subnet" "alex_sbk_wordpress_subnetB" {
+
+   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+   cidr_block = "10.0.21.0/24"
+   availability_zone = data.aws_availability_zones.current_zones_info.names[1]
+   tags = {
+     Name = "Alex-Sbk-wordpress-subnet-SubnetB"
+   }
+ }
+
+ # Now let's create route table
+ # with default route for public subnets
+ resource "aws_route_table" "alex-sbk-public_route_table_for_public_subnets" {
    vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
    route {
      cidr_block = "0.0.0.0/0"
      gateway_id = aws_internet_gateway.alex_sbk_gateway_for_worpress.id
    }
    tags = {
-     Name = "alex-sbk-wordpress-default-route-for-public-subnets"
+     Name = "alex-sbk-public_route_table_for_public_subnets"
    }
  }
 
- # Get info about our public subnets
- data "aws_subnet_ids" "alex-sbk-public-subnets" {
-   depends_on = [aws_subnet.alex_sbk_wordpress_subnets]
-   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+ # Make subnets really public
+ # By adding public routes
+ resource "aws_route_table_association" "alex-sbk-public-route-assotiation-A" {
+   route_table_id = aws_route_table.alex-sbk-public_route_table_for_public_subnets.id
+   subnet_id = aws_subnet.alex_sbk_wordpress_subnetA.id
  }
-
- output "subnets" {
-   value = data.aws_subnet_ids.alex-sbk-public-subnets.ids
+ resource "aws_route_table_association" "alex-sbk-public-route-assotiation-B" {
+   route_table_id = aws_route_table.alex-sbk-public_route_table_for_public_subnets.id
+   subnet_id = aws_subnet.alex_sbk_wordpress_subnetB.id
  }
