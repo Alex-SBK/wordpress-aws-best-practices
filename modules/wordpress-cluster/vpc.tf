@@ -186,7 +186,7 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
  # ================== BASTION HOST!! ==================
  # At first create security group
 
- resource "aws_security_group" "wordpess_bastion_ssh_access" {
+ resource "aws_security_group" "wordpess_bastion_ssh_access_group" {
    name = "SSH-Access-For-Bastion-Host"
    description = "SSH-Access-For-Bastion-Host"
    vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
@@ -209,4 +209,20 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
 //     cidr_blocks = ["0.0.0.0/0"]
 //   }
 
+ }
+
+ # Create launch config for bastion hosts autoscaling group
+
+ resource "aws_launch_configuration" "wordpress_bastion_host" {
+   image_id = "ami-0e1ce3e0deb8896d2"
+   instance_type = "t2.micro"
+   name = "Bastion-HOST-LC"
+
+   # Using our security group
+   security_groups = [aws_security_group.wordpess_bastion_ssh_access_group.id]
+
+   # Required when using a launch configuration with an auto scaling group.
+   lifecycle {
+     create_before_destroy = true
+   }
  }
