@@ -15,7 +15,7 @@ variable "subnets" {
   type = map
 
   default = {
-    subnetdA = {
+    subnetA = {
       cidr_block = "10.0.11.0/24"
       name = "SubnetA"
       av_zone_index = 0
