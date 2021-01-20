@@ -37,3 +37,15 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
     Name = "Alex-Sbk-wordpress-subnet-${each.value.name}"
   }
 }
+
+ # Now let's add default route for public subnets
+ resource "aws_route_table" "public_route_for_public_subnets" {
+   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+   route {
+     cidr_block = "0.0.0.0/0"
+     gateway_id = aws_internet_gateway.alex_sbk_gateway_for_worpress.id
+   }
+   tags = {
+     Name = "alex-sbk-wordpress-default-route-for-public-subnets"
+   }
+ }
