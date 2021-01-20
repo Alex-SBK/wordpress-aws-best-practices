@@ -226,3 +226,22 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
      create_before_destroy = true
    }
  }
+
+  # Now create Auto scaling group for bastion host
+
+
+ resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
+   name = "bastion-host-ASG"
+   launch_configuration = aws_launch_configuration.wordpress_bastion_host.name
+   max_size = 1
+   min_size = 1
+   vpc_zone_identifier = toset([aws_subnet.alex_sbk_wordpress_subnetA_public.id,
+     aws_subnet.alex_sbk_wordpress_subnetB_public.id])
+
+   tag {
+     key = "Name"
+     propagate_at_launch = true
+     value = "bastion-host-for-wordpress"
+   }
+
+ }
