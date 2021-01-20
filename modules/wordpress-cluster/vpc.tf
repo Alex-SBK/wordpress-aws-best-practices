@@ -115,7 +115,7 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
    }
  }
 
- # Create Elastic IP adresses for both subnets
+ # Create Elastic IP adresses for both public subnets
  resource "aws_eip" "ip_of_subnet_A" {
    vpc = true
    tags = {
@@ -123,3 +123,62 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
    }
  }
 
+ resource "aws_eip" "ip_of_subnet_B" {
+   vpc = true
+   tags = {
+     Name = "Subnet-B-Nat-IP"
+   }
+ }
+
+ # Create NAT gateways for public subnets
+ resource "aws_nat_gateway" "NAT-A-Subnet" {
+   allocation_id = aws_eip.ip_of_subnet_A.id
+   subnet_id = aws_subnet.alex_sbk_wordpress_subnetA_public.id
+   tags = {
+     Name = "SubnetA-NAT-Gateway"
+   }
+ }
+
+ resource "aws_nat_gateway" "NAT-B-Subnet" {
+   allocation_id = aws_eip.ip_of_subnet_B.id
+   subnet_id = aws_subnet.alex_sbk_wordpress_subnetB_public.id
+   tags = {
+     Name = "SubnetB-NAT-Gateway"
+   }
+ }
+
+ # Create private route tables
+ resource "aws_route_table" "PrivateA-to-NAT-A" {
+   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+   depends_on = [aws_nat_gateway.NAT-A-Subnet]
+   route {
+     cidr_block = "0.0.0.0/0"
+     gateway_id = aws_nat_gateway.NAT-A-Subnet.id
+   }
+   tags = {
+     Name = "alex-sbk-private_route_table_for_subnetA-Private"
+   }
+ }
+
+ resource "aws_route_table" "PrivateB-to-NAT-B" {
+   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+   depends_on = [aws_nat_gateway.NAT-B-Subnet]
+   route {
+     cidr_block = "0.0.0.0/0"
+     gateway_id = aws_nat_gateway.NAT-B-Subnet.id
+   }
+   tags = {
+     Name = "alex-sbk-private_route_table_for_subnetB-Private"
+   }
+ }
+
+ # Associate our private subnets to NAT gateways
+ resource "aws_route_table_association" "assotiation-subnet-app-A" {
+   route_table_id = aws_route_table.PrivateA-to-NAT-A.id
+   subnet_id = aws_subnet.alex_sbk_wordpress_subnetA_private_app.id
+ }
+
+ resource "aws_route_table_association" "assotiation-subnet-app-B" {
+   route_table_id = aws_route_table.PrivateB-to-NAT-B.id
+   subnet_id = aws_subnet.alex_sbk_wordpress_subnetB_private_app.id
+ }
