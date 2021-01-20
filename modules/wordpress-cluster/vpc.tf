@@ -182,3 +182,31 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
    route_table_id = aws_route_table.PrivateB-to-NAT-B.id
    subnet_id = aws_subnet.alex_sbk_wordpress_subnetB_private_app.id
  }
+
+ # ================== BASTION HOST!! ==================
+ # At first create security group
+
+ resource "aws_security_group" "wordpess_bastion_ssh_access" {
+   name = "SSH-Access-For-Bastion-Host"
+   description = "SSH-Access-For-Bastion-Host"
+   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+   tags = {
+     Name = "Bastion-Host_Security-group"
+   }
+   # Allow incoming SSH packets from anywhere
+   ingress {
+     from_port = 22
+     protocol = "tcp"
+     to_port = 22
+     cidr_blocks = ["0.0.0.0/0"]
+   }
+
+//   # Allow all outbound requests
+//   egress {
+//     from_port = 0
+//     protocol = -1
+//     to_port = 0
+//     cidr_blocks = ["0.0.0.0/0"]
+//   }
+
+ }
