@@ -1,4 +1,7 @@
  # At first create VPC for our wordpress application
+provider "aws" {
+  region = "us-west-2"
+}
 
 resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
   cidr_block = "10.0.0.0/16"
@@ -10,7 +13,7 @@ resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
 
  # Next create gateway
  # And attach it with our VPC
-resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
+resource "aws_internet_gateway" "alex_sbk_gateway_for_wordpress" {
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
   tags = {
     Name = "alex_sbk_igw_for_wordpress"
@@ -19,11 +22,11 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
 
  # ======= PUBLIC SUBNETS ==========
 
- # Now cteare 2 subnets for
- # 2 separate Aviability Zones in one VPC
- # for hight Aviability and so on
+ # Now create 2 subnets for
+ # 2 separate availability Zones in one VPC
+ # for High availability and so on
 
- # At first get info about Avalibility zones in current region
+ # At first get info about availability zones in current region
  data "aws_availability_zones" "current_zones_info" {
 
  }
@@ -55,7 +58,7 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
    vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
    route {
      cidr_block = "0.0.0.0/0"
-     gateway_id = aws_internet_gateway.alex_sbk_gateway_for_worpress.id
+     gateway_id = aws_internet_gateway.alex_sbk_gateway_for_wordpress.id
    }
    tags = {
      Name = "alex-sbk-public_route_table_for_public_subnets"
@@ -64,11 +67,11 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
 
  # Make subnets really public
  # By adding public routes
- resource "aws_route_table_association" "alex-sbk-public-route-assotiation-A" {
+ resource "aws_route_table_association" "alex-sbk-public-route-association-A" {
    route_table_id = aws_route_table.alex-sbk-public_route_table_for_public_subnets.id
    subnet_id = aws_subnet.alex_sbk_wordpress_subnetA_public.id
  }
- resource "aws_route_table_association" "alex-sbk-public-route-assotiation-B" {
+ resource "aws_route_table_association" "alex-sbk-public-route-association-B" {
    route_table_id = aws_route_table.alex-sbk-public_route_table_for_public_subnets.id
    subnet_id = aws_subnet.alex_sbk_wordpress_subnetB_public.id
  }
@@ -115,7 +118,7 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
    }
  }
 
- # Create Elastic IP adresses for both public subnets
+ # Create Elastic IP addresses for both public subnets
  resource "aws_eip" "ip_of_subnet_A" {
    vpc = true
    tags = {
@@ -173,12 +176,12 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
  }
 
  # Associate our private subnets to NAT gateways
- resource "aws_route_table_association" "assotiation-subnet-app-A" {
+ resource "aws_route_table_association" "association-subnet-app-A" {
    route_table_id = aws_route_table.PrivateA-to-NAT-A.id
    subnet_id = aws_subnet.alex_sbk_wordpress_subnetA_private_app.id
  }
 
- resource "aws_route_table_association" "assotiation-subnet-app-B" {
+ resource "aws_route_table_association" "association-subnet-app-B" {
    route_table_id = aws_route_table.PrivateB-to-NAT-B.id
    subnet_id = aws_subnet.alex_sbk_wordpress_subnetB_private_app.id
  }
@@ -186,7 +189,7 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
  # ================== BASTION HOST!! ==================
  # At first create security group
 
- resource "aws_security_group" "wordpess_bastion_ssh_access_group" {
+ resource "aws_security_group" "wordpress_bastion_ssh_access_group" {
    name = "SSH-Access-For-Bastion-Host"
    description = "SSH-Access-For-Bastion-Host"
    vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
@@ -219,7 +222,7 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
    name = "Bastion-HOST-LC"
 
    # Using our security group
-   security_groups = [aws_security_group.wordpess_bastion_ssh_access_group.id]
+   security_groups = [aws_security_group.wordpress_bastion_ssh_access_group.id]
 
    # Required when using a launch configuration with an auto scaling group.
    lifecycle {
@@ -228,7 +231,6 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_worpress" {
  }
 
   # Now create Auto scaling group for bastion host
-
 
  resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
    name = "bastion-host-ASG"
