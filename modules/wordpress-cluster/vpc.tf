@@ -1,10 +1,10 @@
- # At first create VPC for our worpress application
+ # At first create VPC for our wordpress application
 
 resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
   cidr_block = "10.0.0.0/16"
   instance_tenancy = "default"
   tags = {
-    Name = "alex_sbk_vpc_for_worpress_best_practice"
+    Name = "alex_sbk_vpc_for_wordpress_best_practice"
   }
 }
 
