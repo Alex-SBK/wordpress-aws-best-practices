@@ -8,7 +8,7 @@ resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
   cidr_block = "10.0.0.0/16"
   instance_tenancy = "default"
   tags = {
-    Name = "alex_sbk_vpc_for_wordpress_best_practice"
+    Name = "Wordpress_best_practice"
   }
 }
 
@@ -32,7 +32,7 @@ resource "aws_subnet" "Subnet_A_public" {
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   map_public_ip_on_launch = true
   tags = {
-    Name = "Alex-Sbk-wordpress-subnet-SubnetA_public"
+    Name = "Subnet_A_public"
   }
 }
 
@@ -42,7 +42,7 @@ resource "aws_subnet" "Subnet_B_public" {
   map_public_ip_on_launch = true
   availability_zone = data.aws_availability_zones.current_zones_info.names[1]
   tags = {
-    Name = "Alex-Sbk-wordpress-subnet-SubnetB_public"
+    Name = "Subnet_B_public"
   }
 }
 
@@ -52,7 +52,7 @@ resource "aws_subnet" "Subnet_B_public" {
 resource "aws_internet_gateway" "alex_sbk_gateway_for_wordpress" {
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
   tags = {
-    Name = "alex_sbk_igw_for_wordpress"
+    Name = "IGW_for_wordpress"
   }
 }
 
@@ -70,7 +70,7 @@ resource "aws_route_table" "alex-sbk-public_route_table_for_public_subnets" {
     gateway_id = aws_internet_gateway.alex_sbk_gateway_for_wordpress.id
   }
   tags = {
-    Name = "alex-sbk-public_route_table_for_public_subnets"
+    Name = "public_route_table"
   }
 }
 
@@ -97,7 +97,7 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetA_private_app" {
   cidr_block = "10.0.12.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
-    Name = "Alex_sbk_wordpress_subnetA_private_app"
+    Name = "01_Subnet_A_private_app"
   }
 }
 # Private App subnet B
@@ -106,7 +106,7 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetB_private_app" {
   cidr_block = "10.0.22.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
-    Name = "Alex_sbk_wordpress_subnetB_private_app"
+    Name = "02_Subnet_B_private_app"
   }
 }
 
@@ -119,7 +119,7 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetA_private_data" {
   cidr_block = "10.0.13.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
-    Name = "Alex_sbk_wordpress_subnetA_private_data"
+    Name = "03_Subnet_A_private_data"
   }
 }
 
@@ -129,7 +129,7 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetB_private_data" {
   cidr_block = "10.0.23.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[1]
   tags = {
-    Name = "Alex_sbk_wordpress_subnetB_private_data "
+    Name = "04_Subnet_B_private_data "
   }
 }
 
@@ -216,23 +216,25 @@ resource "aws_security_group" "wordpress_bastion_ssh_access_group" {
   description = "SSH-Access-For-Bastion-Host"
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
   tags = {
-    Name = "Bastion-Host_Security-group"
+    Name = "Bastion-Host-Security-group"
   }
   # Allow incoming SSH packets from anywhere
   ingress {
     from_port = 22
     protocol = "tcp"
     to_port = 22
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [
+      "0.0.0.0/0"]
   }
 
-     # Allow all outbound requests
-     egress {
-       from_port = 0
-       protocol = -1
-       to_port = 0
-       cidr_blocks = ["0.0.0.0/0"]
-     }
+  # Allow all outbound requests
+  egress {
+    from_port = 0
+    protocol = -1
+    to_port = 0
+    cidr_blocks = [
+      "0.0.0.0/0"]
+  }
 
 }
 
@@ -242,7 +244,7 @@ resource "aws_launch_configuration" "wordpress_bastion_host" {
   image_id = "ami-0ac73f33a1888c64a"
 
   instance_type = "t2.micro"
-  name = "Bastion-HOST-LC"
+  name = "Bastion-HOST-LC-instance"
 
   # this key was previously created by me.
   key_name = "oregon"
@@ -271,7 +273,7 @@ resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
   tag {
     key = "Name"
     propagate_at_launch = true
-    value = "Wordpress-bastion-host-AG"
+    value = "Bastion-host-ASG"
   }
 
 }
