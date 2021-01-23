@@ -12,7 +12,6 @@ resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
   }
 }
 
-
 # ======= PUBLIC SUBNETS ==========
 # Now create 2 subnets for
 # 2 separate availability Zones in one VPC
@@ -21,9 +20,7 @@ resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
 # At first get info about availability zones in current region
 # We'll create two subnets in different availability zones
 # So we need to know which zones is available
-data "aws_availability_zones" "current_zones_info" {
-
-}
+data "aws_availability_zones" "current_zones_info" {}
 
 # And create the public subnets: A and B
 resource "aws_subnet" "Subnet_A_public" {
@@ -46,8 +43,8 @@ resource "aws_subnet" "Subnet_B_public" {
   }
 }
 
-# ======= Public subnets GATEWAY =======
-# Next create simple gateway (not NAT Gateway)
+# ======= VPC INTERNET GATEWAY =======
+# Next create internet gateway (not NAT Gateway)
 # And attach it with our VPC
 resource "aws_internet_gateway" "alex_sbk_gateway_for_wordpress" {
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
@@ -61,9 +58,9 @@ resource "aws_internet_gateway" "alex_sbk_gateway_for_wordpress" {
 # with default route for public subnets.
 #
 # We want all traffic from all instances in our public subnets
-# to go to our default gateway (to the Internet)
+# to go to our default internet gateway (to the Internet)
 # So do the next:
-resource "aws_route_table" "alex-sbk-public_route_table_for_public_subnets" {
+resource "aws_route_table" "alex_sbk_public_route_table_for_public_subnets" {
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
   route {
     cidr_block = "0.0.0.0/0"
@@ -79,12 +76,12 @@ resource "aws_route_table" "alex-sbk-public_route_table_for_public_subnets" {
 
 # Public Subnet A
 resource "aws_route_table_association" "alex-sbk-public-route-association-A" {
-  route_table_id = aws_route_table.alex-sbk-public_route_table_for_public_subnets.id
+  route_table_id = aws_route_table.alex_sbk_public_route_table_for_public_subnets.id
   subnet_id = aws_subnet.Subnet_A_public.id
 }
 # Public Subnet B
 resource "aws_route_table_association" "alex-sbk-public-route-association-B" {
-  route_table_id = aws_route_table.alex-sbk-public_route_table_for_public_subnets.id
+  route_table_id = aws_route_table.alex_sbk_public_route_table_for_public_subnets.id
   subnet_id = aws_subnet.Subnet_B_public.id
 }
 
@@ -148,7 +145,8 @@ resource "aws_eip" "ip_of_subnet_B" {
   }
 }
 
-# Create NAT gateways in our public subnets:
+# Create NAT gateways in our public subnets
+# And bind them with our public IP addresses:
 resource "aws_nat_gateway" "NAT-A-Subnet" {
   allocation_id = aws_eip.ip_of_subnet_A.id
   subnet_id = aws_subnet.Subnet_A_public.id
@@ -277,3 +275,5 @@ resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
   }
 
 }
+
+
