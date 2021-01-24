@@ -46,7 +46,7 @@ resource "aws_subnet" "Subnet_B_public" {
 # ======= VPC INTERNET GATEWAY =======
 # Next create internet gateway (not NAT Gateway)
 # And attach it with our VPC
-resource "aws_internet_gateway" "alex_sbk_gateway_for_wordpress" {
+resource "aws_internet_gateway" "main_gateway_for_wordpress" {
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
   tags = {
     Name = "IGW_for_wordpress"
@@ -64,7 +64,7 @@ resource "aws_route_table" "alex_sbk_public_route_table_for_public_subnets" {
   vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.alex_sbk_gateway_for_wordpress.id
+    gateway_id = aws_internet_gateway.main_gateway_for_wordpress.id
   }
   tags = {
     Name = "public_route_table"
