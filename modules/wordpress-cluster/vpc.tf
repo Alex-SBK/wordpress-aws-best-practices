@@ -4,7 +4,7 @@ provider "aws" {
 
 # ======= VPC  =======
 # At first create VPC for our wordpress application
-resource "aws_vpc" "alex_sbk_vpc_for_wordpress" {
+resource "aws_vpc" "vpc_for_wordpress" {
   cidr_block = "10.0.0.0/16"
   instance_tenancy = "default"
   tags = {
@@ -24,7 +24,7 @@ data "aws_availability_zones" "current_zones_info" {}
 
 # And create the public subnets: A and B
 resource "aws_subnet" "Subnet_A_public" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.11.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   map_public_ip_on_launch = true
@@ -34,7 +34,7 @@ resource "aws_subnet" "Subnet_A_public" {
 }
 
 resource "aws_subnet" "Subnet_B_public" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.21.0/24"
   map_public_ip_on_launch = true
   availability_zone = data.aws_availability_zones.current_zones_info.names[1]
@@ -47,27 +47,27 @@ resource "aws_subnet" "Subnet_B_public" {
 # Next create internet gateway (not NAT Gateway)
 # And attach it with our VPC
 resource "aws_internet_gateway" "main_gateway_for_wordpress" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   tags = {
-    Name = "IGW_for_wordpress"
+    Name = "IGW_for_wordpress_vpc"
   }
 }
 
-# ======= Public route tables =======
+# ======= Public route table =======
 # Now let's create route table
 # with default route for public subnets.
 #
 # We want all traffic from all instances in our public subnets
 # to go to our default internet gateway (to the Internet)
 # So do the next:
-resource "aws_route_table" "alex_sbk_public_route_table_for_public_subnets" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+resource "aws_route_table" "public_rt_for_public_subnets" {
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main_gateway_for_wordpress.id
   }
   tags = {
-    Name = "public_route_table"
+    Name = "public_RT"
   }
 }
 
@@ -76,12 +76,12 @@ resource "aws_route_table" "alex_sbk_public_route_table_for_public_subnets" {
 
 # Public Subnet A
 resource "aws_route_table_association" "alex-sbk-public-route-association-A" {
-  route_table_id = aws_route_table.alex_sbk_public_route_table_for_public_subnets.id
+  route_table_id = aws_route_table.public_rt_for_public_subnets.id
   subnet_id = aws_subnet.Subnet_A_public.id
 }
 # Public Subnet B
 resource "aws_route_table_association" "alex-sbk-public-route-association-B" {
-  route_table_id = aws_route_table.alex_sbk_public_route_table_for_public_subnets.id
+  route_table_id = aws_route_table.public_rt_for_public_subnets.id
   subnet_id = aws_subnet.Subnet_B_public.id
 }
 
@@ -89,8 +89,8 @@ resource "aws_route_table_association" "alex-sbk-public-route-association-B" {
 # Now create server subnets for Wordpress Instances
 
 # Private App subnet A
-resource "aws_subnet" "alex_sbk_wordpress_subnetA_private_app" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+resource "aws_subnet" "subnet_A_private_app" {
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.12.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
@@ -98,8 +98,8 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetA_private_app" {
   }
 }
 # Private App subnet B
-resource "aws_subnet" "alex_sbk_wordpress_subnetB_private_app" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+resource "aws_subnet" "subnet_B_private_app" {
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.22.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
@@ -111,8 +111,8 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetB_private_app" {
 # Now create database subnets for Wordpress Databases
 
 # Private Data Subnet A
-resource "aws_subnet" "alex_sbk_wordpress_subnetA_private_data" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+resource "aws_subnet" "subnet_A_private_data" {
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.13.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   tags = {
@@ -121,8 +121,8 @@ resource "aws_subnet" "alex_sbk_wordpress_subnetA_private_data" {
 }
 
 # Private Data Subnet B
-resource "aws_subnet" "alex_sbk_wordpress_subnetB_private_data" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+resource "aws_subnet" "subnet_B_private_data" {
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.23.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[1]
   tags = {
@@ -165,7 +165,7 @@ resource "aws_nat_gateway" "NAT-B-Subnet" {
 
 # Create private route tables
 resource "aws_route_table" "PrivateA-to-NAT-A" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   depends_on = [
     aws_nat_gateway.NAT-A-Subnet]
   route {
@@ -173,12 +173,12 @@ resource "aws_route_table" "PrivateA-to-NAT-A" {
     gateway_id = aws_nat_gateway.NAT-A-Subnet.id
   }
   tags = {
-    Name = "Route-To-Nat-A"
+    Name = "Private-RT-To-Nat-A"
   }
 }
 
 resource "aws_route_table" "PrivateB-to-NAT-B" {
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   depends_on = [
     aws_nat_gateway.NAT-B-Subnet]
   route {
@@ -186,7 +186,7 @@ resource "aws_route_table" "PrivateB-to-NAT-B" {
     gateway_id = aws_nat_gateway.NAT-B-Subnet.id
   }
   tags = {
-    Name = "Route-To-Nat-B"
+    Name = "Private-RT-Nat-B"
   }
 }
 
@@ -195,24 +195,24 @@ resource "aws_route_table" "PrivateB-to-NAT-B" {
 # Private App subnet A
 resource "aws_route_table_association" "association-subnet-app-A" {
   route_table_id = aws_route_table.PrivateA-to-NAT-A.id
-  subnet_id = aws_subnet.alex_sbk_wordpress_subnetA_private_app.id
+  subnet_id = aws_subnet.subnet_A_private_app.id
 }
 # Private App subnet B
 resource "aws_route_table_association" "association-subnet-app-B" {
   route_table_id = aws_route_table.PrivateB-to-NAT-B.id
-  subnet_id = aws_subnet.alex_sbk_wordpress_subnetB_private_app.id
+  subnet_id = aws_subnet.subnet_B_private_app.id
 }
 
 # Data subnets has no outside routes
 
 
-# ================== BASTION HOST!! ==================
+# ================== BASTION HOST scaling group ==================
 # At first create security group for bastion host
 
 resource "aws_security_group" "wordpress_bastion_ssh_access_group" {
   name = "SSH-Access-For-Bastion-Host"
   description = "SSH-Access-For-Bastion-Host"
-  vpc_id = aws_vpc.alex_sbk_vpc_for_wordpress.id
+  vpc_id = aws_vpc.vpc_for_wordpress.id
   tags = {
     Name = "Bastion-Host-Security-group"
   }
@@ -237,7 +237,6 @@ resource "aws_security_group" "wordpress_bastion_ssh_access_group" {
 }
 
 # Create launch config for bastion hosts autoscaling group
-
 resource "aws_launch_configuration" "wordpress_bastion_host" {
   image_id = "ami-0ac73f33a1888c64a"
 
@@ -258,7 +257,6 @@ resource "aws_launch_configuration" "wordpress_bastion_host" {
 }
 
 # Now create Auto scaling group for bastion host
-
 resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
   name = "bastion-host-ASG"
   launch_configuration = aws_launch_configuration.wordpress_bastion_host.name
@@ -273,7 +271,45 @@ resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
     propagate_at_launch = true
     value = "Bastion-host-ASG"
   }
-
 }
 
+# ======= CREATING EFS for wordpress VPC==========
 
+# At first create security group for EFS
+resource "aws_security_group" "efs_security_group" {
+  name = "EFS_security_group"
+  description = "EFS_security_group"
+  vpc_id = aws_vpc.vpc_for_wordpress.id
+  tags = {
+    Name = "EFS_security_group"
+  }
+  # Allow incoming SSH packets from anywhere
+  ingress {
+    from_port = 2049
+    protocol = "tcp"
+    to_port = 2049
+    cidr_blocks = [
+      "10.0.0.0/16"]
+    description = "Our default VPC"
+  }
+}
+
+# Now create EFS filesystem
+resource "aws_efs_file_system" "wordpress_efs" {
+  creation_token = "efs-wordpress"
+  tags = {
+    Name = "wordpress-EFS"
+  }
+}
+
+# Now create EFS mount targets for both subnets:
+# For A subnet private app:
+resource "aws_efs_mount_target" "wordpress_target_subnet_A_private_app" {
+  file_system_id = aws_efs_file_system.wordpress_efs.id
+  subnet_id = aws_subnet.subnet_A_private_app
+}
+# For B subnet private app:
+resource "aws_efs_mount_target" "wordpress_target_subnet_B_private_app" {
+  file_system_id = aws_efs_file_system.wordpress_efs.id
+  subnet_id = aws_subnet.subnet_B_private_app.id
+}
