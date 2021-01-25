@@ -243,7 +243,7 @@ resource "aws_launch_configuration" "wp_bastion_host_lc" {
   image_id = "ami-0ac73f33a1888c64a"
 
   instance_type = "t2.micro"
-  name = "Bastion-HOST-LC-instance"
+  name = "Bastion-HOST-LC"
 
   # this key was previously created by me.
   key_name = "oregon"
@@ -262,8 +262,8 @@ resource "aws_launch_configuration" "wp_bastion_host_lc" {
 resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
   name = "bastion-host-ASG"
   launch_configuration = aws_launch_configuration.wp_bastion_host_lc.name
-  max_size = 1
-  min_size = 1
+  max_size = 0
+  min_size = 0
   vpc_zone_identifier = toset([
     aws_subnet.Subnet_A_public.id,
     aws_subnet.Subnet_B_public.id
@@ -322,8 +322,9 @@ resource "aws_efs_mount_target" "wordpress_target_subnet_B_private_app" {
   subnet_id = aws_subnet.subnet_B_private_app.id
 }
 
-# ======= CREATING AUTOSCALING group for wordpress ASG ==========
-# At fist create security group for wordpress
+# ======= Creating Application Load Balancer (ALB) for wordpress scaling group =======
+
+# At fist create security group for access to wordpress web application:
 # For allowing 80 and 443 ports:
 resource "aws_security_group" "web_access" {
   description = "Give incoming Access for 80 and 443 port"
@@ -340,6 +341,7 @@ resource "aws_security_group" "web_access" {
       "0.0.0.0/0"]
     description = "Allow incoming HTTP connections from anywhere"
   }
+  # Allow incoming HTTPS packets from anywhere
   ingress {
     from_port = 443
     protocol = "tcp"
@@ -348,14 +350,85 @@ resource "aws_security_group" "web_access" {
       "0.0.0.0/0"]
     description = "Allow incoming HTTPS connections from anywhere"
   }
+  # Allow all outbound requests:
+  egress {
+    from_port = 0
+    protocol = "-1"
+    to_port = 0
+    cidr_blocks = [
+      "0.0.0.0/0"]
+  }
 }
 
+
+# Now create ALB itself:
+resource "aws_lb" "wordpress_ALB" {
+  name = "wordpress-app-load-balancer"
+  load_balancer_type = "application"
+  security_groups = [
+    aws_security_group.web_access.id
+  ]
+  subnets = [
+    aws_subnet.subnet_A_private_app.id,
+    aws_subnet.subnet_B_private_app.id
+  ]
+}
+
+# Next: define LISTENER:
+resource "aws_lb_listener" "wordpress_http" {
+  load_balancer_arn = aws_lb.wordpress_ALB.arn
+  port = 80
+  protocol = "HTTP"
+  # by default, return simple 404 page
+  default_action {
+    type = "fixed-response"
+    fixed_response {
+      content_type = "text/plain"
+      message_body = "404: page not found"
+      status_code = "404"
+    }
+  }
+}
+
+# Next we have to create a target group for our ALB and ASG :)
+resource "aws_lb_target_group" "wordpress_lb_target_group" {
+  name = "wordpress-TG"
+  port = 80
+  protocol = "HTTP"
+  vpc_id = aws_vpc.vpc_for_wordpress.id
+  health_check {
+    path = "/"
+    protocol = "HTTP"
+    matcher = "200"
+    interval = 15
+    timeout = 3
+    healthy_threshold = 2
+    unhealthy_threshold = 2
+  }
+}
+
+resource "aws_lb_listener_rule" "wordpress" {
+  listener_arn = aws_lb_listener.wordpress_http.arn
+  priority = 100
+  action {
+    type = "forward"
+    target_group_arn = aws_lb_target_group.wordpress_lb_target_group.arn
+  }
+  condition {
+    path_pattern {
+      values = ["*"]
+    }
+
+  }
+}
+
+# ======= CREATING AUTOSCALING group for wordpress ASG ==========
 # Next: create launch config for wordpress instances autoscaling group:
 resource "aws_launch_configuration" "wordpress_node_lc" {
   image_id = "ami-0ac73f33a1888c64a"
 
   instance_type = "t2.micro"
-  name = "Wordpress-LC-instance"
+  name = "Wordpress-node-LC"
 
   # this key was previously created by me.
   key_name = "oregon"
@@ -370,7 +443,7 @@ resource "aws_launch_configuration" "wordpress_node_lc" {
   # 1) setup apache
   # 2) mount efs target
   # 3) install wordpress
-  user_data = templatefile("initial_shell_script.sh",{
+  user_data = templatefile("initial_shell_script.sh", {
     efs_id = aws_efs_file_system.wordpress_efs.id
   })
 
@@ -384,8 +457,8 @@ resource "aws_launch_configuration" "wordpress_node_lc" {
 resource "aws_autoscaling_group" "wordpress-auto-scaling-group" {
   name = "wordpress-instances-ASG"
   launch_configuration = aws_launch_configuration.wordpress_node_lc.name
-  max_size = 2
-  min_size = 2
+  max_size = 0
+  min_size = 0
   vpc_zone_identifier = toset([
     aws_subnet.subnet_A_private_app.id,
     aws_subnet.subnet_B_private_app.id
@@ -396,4 +469,10 @@ resource "aws_autoscaling_group" "wordpress-auto-scaling-group" {
     propagate_at_launch = true
     value = "Wordpress-ASG-node"
   }
+  target_group_arns = [
+    aws_lb_target_group.wordpress_lb_target_group.arn]
+}
+
+output "lb_dns_name" {
+  value = aws_lb.wordpress_ALB.dns_name
 }
