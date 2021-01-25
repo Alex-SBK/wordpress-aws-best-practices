@@ -101,10 +101,11 @@ resource "aws_subnet" "subnet_A_private_app" {
 resource "aws_subnet" "subnet_B_private_app" {
   vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.22.0/24"
-  availability_zone = data.aws_availability_zones.current_zones_info.names[0]
+  availability_zone = data.aws_availability_zones.current_zones_info.names[1]
   tags = {
     Name = "02_Subnet_B_private_app"
   }
+
 }
 
 # ======= PRIVATE SUBNETS (DATABASES)==========
@@ -201,9 +202,10 @@ resource "aws_route_table_association" "association-subnet-app-A" {
 resource "aws_route_table_association" "association-subnet-app-B" {
   route_table_id = aws_route_table.PrivateB-to-NAT-B.id
   subnet_id = aws_subnet.subnet_B_private_app.id
+
 }
 
-# Data subnets has no outside routes
+# Data subnets has no routes to outside!
 
 
 # ================== BASTION HOST scaling group ==================
@@ -270,7 +272,7 @@ resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
   tag {
     key = "Name"
     propagate_at_launch = true
-    value = "Bastion-host-ASG"
+    value = "Bastion-host-ASG-node"
   }
 }
 
@@ -320,9 +322,9 @@ resource "aws_efs_mount_target" "wordpress_target_subnet_B_private_app" {
   subnet_id = aws_subnet.subnet_B_private_app.id
 }
 
-# ======= CREATING AUTOSCALING group for wordpress instances ==========
+# ======= CREATING AUTOSCALING group for wordpress ASG ==========
 # At fist create security group for wordpress
-# For 80 and 443 ports:
+# For allowing 80 and 443 ports:
 resource "aws_security_group" "web_access" {
   description = "Give incoming Access for 80 and 443 port"
   vpc_id = aws_vpc.vpc_for_wordpress.id
@@ -349,7 +351,6 @@ resource "aws_security_group" "web_access" {
 }
 
 # Next: create launch config for wordpress instances autoscaling group:
-
 resource "aws_launch_configuration" "wordpress_node_lc" {
   image_id = "ami-0ac73f33a1888c64a"
 
@@ -365,6 +366,10 @@ resource "aws_launch_configuration" "wordpress_node_lc" {
     aws_security_group.web_access.id
   ]
 
+  # In this initial script we'll do the next:
+  # 1) setup apache
+  # 2) mount efs target
+  # 3) install wordpress
   user_data = templatefile("initial_shell_script.sh",{
     efs_id = aws_efs_file_system.wordpress_efs.id
   })
@@ -372,5 +377,23 @@ resource "aws_launch_configuration" "wordpress_node_lc" {
   # Required when using a launch configuration with an auto scaling group.
   lifecycle {
     create_before_destroy = false
+  }
+}
+
+# Now create ASG for wordpress instances:
+resource "aws_autoscaling_group" "wordpress-auto-scaling-group" {
+  name = "wordpress-instances-ASG"
+  launch_configuration = aws_launch_configuration.wordpress_node_lc.name
+  max_size = 2
+  min_size = 2
+  vpc_zone_identifier = toset([
+    aws_subnet.subnet_A_private_app.id,
+    aws_subnet.subnet_B_private_app.id
+  ])
+
+  tag {
+    key = "Name"
+    propagate_at_launch = true
+    value = "Wordpress-ASG-node"
   }
 }
