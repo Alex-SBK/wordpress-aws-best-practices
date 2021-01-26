@@ -24,7 +24,7 @@ resource "aws_vpc" "vpc_for_wordpress" {
 data "aws_availability_zones" "current_zones_info" {}
 
 # And create the public subnets: A and B
-resource "aws_subnet" "Subnet_A_public" {
+resource "aws_subnet" "subnet_A_public" {
   vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.11.0/24"
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
@@ -34,7 +34,7 @@ resource "aws_subnet" "Subnet_A_public" {
   }
 }
 
-resource "aws_subnet" "Subnet_B_public" {
+resource "aws_subnet" "subnet_B_public" {
   vpc_id = aws_vpc.vpc_for_wordpress.id
   cidr_block = "10.0.21.0/24"
   map_public_ip_on_launch = true
@@ -78,12 +78,12 @@ resource "aws_route_table" "public_rt_for_public_subnets" {
 # Public Subnet A
 resource "aws_route_table_association" "alex-sbk-public-route-association-A" {
   route_table_id = aws_route_table.public_rt_for_public_subnets.id
-  subnet_id = aws_subnet.Subnet_A_public.id
+  subnet_id = aws_subnet.subnet_A_public.id
 }
 # Public Subnet B
 resource "aws_route_table_association" "alex-sbk-public-route-association-B" {
   route_table_id = aws_route_table.public_rt_for_public_subnets.id
-  subnet_id = aws_subnet.Subnet_B_public.id
+  subnet_id = aws_subnet.subnet_B_public.id
 }
 
 # ======= PRIVATE SUBNETS (Application Servers)==========
@@ -155,7 +155,7 @@ resource "aws_eip" "ip_of_subnet_B" {
 # two separate public subnets:
 resource "aws_nat_gateway" "NAT-A-Subnet" {
   allocation_id = aws_eip.ip_of_subnet_A.id
-  subnet_id = aws_subnet.Subnet_A_public.id
+  subnet_id = aws_subnet.subnet_A_public.id
   tags = {
     Name = "Subnet-A-NAT-Gateway"
   }
@@ -163,7 +163,7 @@ resource "aws_nat_gateway" "NAT-A-Subnet" {
 
 resource "aws_nat_gateway" "NAT-B-Subnet" {
   allocation_id = aws_eip.ip_of_subnet_B.id
-  subnet_id = aws_subnet.Subnet_B_public.id
+  subnet_id = aws_subnet.subnet_B_public.id
   tags = {
     Name = "Subnet-B-NAT-Gateway"
   }
@@ -246,6 +246,7 @@ resource "aws_security_group" "ssh_access" {
 
 # Create launch config for bastion hosts autoscaling group
 resource "aws_launch_configuration" "wp_bastion_host_lc" {
+  user_data = file("user_data.sh")
   image_id = "ami-0ac73f33a1888c64a"
 
   instance_type = "t2.micro"
@@ -271,8 +272,8 @@ resource "aws_autoscaling_group" "bastion-host-auto-scaling-group" {
   max_size = 0
   min_size = 0
   vpc_zone_identifier = toset([
-    aws_subnet.Subnet_A_public.id,
-    aws_subnet.Subnet_B_public.id
+    aws_subnet.subnet_A_public.id,
+    aws_subnet.subnet_B_public.id
   ])
 
   tag {
@@ -375,8 +376,8 @@ resource "aws_lb" "wordpress_ALB" {
     aws_security_group.web_access.id
   ]
   subnets = [
-    aws_subnet.subnet_A_private_app.id,
-    aws_subnet.subnet_B_private_app.id
+    aws_subnet.subnet_A_public.id,
+    aws_subnet.subnet_B_public.id
   ]
 }
 

@@ -7,3 +7,4 @@
 *.lock.*
 *.code-workspace
 *.idea
+user_data.sh
