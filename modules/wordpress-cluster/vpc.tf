@@ -375,6 +375,8 @@ resource "aws_lb" "wordpress_ALB" {
   security_groups = [
     aws_security_group.web_access.id
   ]
+  # use public networks!
+  # Otherwise, outside users will not have access to your load balancer
   subnets = [
     aws_subnet.subnet_A_public.id,
     aws_subnet.subnet_B_public.id
