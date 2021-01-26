@@ -17,9 +17,10 @@ resource "aws_vpc" "vpc_for_wordpress" {
 # 2 separate availability Zones in one VPC
 # for High availability and so on
 
-# At first get info about availability zones in current region
+# At first get from AWS info about availability zones in current region
 # We'll create two subnets in different availability zones
-# So we need to know which zones is available
+
+# So we need to know which zones is available:
 data "aws_availability_zones" "current_zones_info" {}
 
 # And create the public subnets: A and B
@@ -29,7 +30,7 @@ resource "aws_subnet" "Subnet_A_public" {
   availability_zone = data.aws_availability_zones.current_zones_info.names[0]
   map_public_ip_on_launch = true
   tags = {
-    Name = "Subnet_A_public"
+    Name = "00_Subnet_A_public"
   }
 }
 
@@ -39,7 +40,7 @@ resource "aws_subnet" "Subnet_B_public" {
   map_public_ip_on_launch = true
   availability_zone = data.aws_availability_zones.current_zones_info.names[1]
   tags = {
-    Name = "Subnet_B_public"
+    Name = "00_Subnet_B_public"
   }
 }
 
@@ -55,8 +56,8 @@ resource "aws_internet_gateway" "main_gateway_for_wordpress" {
 
 # ======= Public route table =======
 # Now let's create route table
-# with default route for public subnets.
-#
+# with default route to our internet gateway
+# for public subnets.
 # We want all traffic from all instances in our public subnets
 # to go to our default internet gateway (to the Internet)
 # So do the next:
@@ -71,8 +72,8 @@ resource "aws_route_table" "public_rt_for_public_subnets" {
   }
 }
 
-# Making subnets truly public
-# Adding public routes to them:
+# Making subnets truly public by
+# attaching them to our public route table:
 
 # Public Subnet A
 resource "aws_route_table_association" "alex-sbk-public-route-association-A" {
@@ -148,6 +149,10 @@ resource "aws_eip" "ip_of_subnet_B" {
 
 # Create NAT gateways in our public subnets
 # And bind them with our public IP addresses:
+# NAT-gateway it is something like instance
+# so it should be situated in some subnet
+# And to high availability we'll create two NAT-gateways in
+# two separate public subnets:
 resource "aws_nat_gateway" "NAT-A-Subnet" {
   allocation_id = aws_eip.ip_of_subnet_A.id
   subnet_id = aws_subnet.Subnet_A_public.id
@@ -165,6 +170,7 @@ resource "aws_nat_gateway" "NAT-B-Subnet" {
 }
 
 # Create private route tables
+
 resource "aws_route_table" "PrivateA-to-NAT-A" {
   vpc_id = aws_vpc.vpc_for_wordpress.id
   depends_on = [
@@ -425,7 +431,7 @@ resource "aws_lb_listener_rule" "wordpress" {
 # ======= CREATING AUTOSCALING group for wordpress ASG ==========
 # Next: create launch config for wordpress instances autoscaling group:
 resource "aws_launch_configuration" "wordpress_node_lc" {
-  image_id = "ami-0ac73f33a1888c64a"
+  image_id = "ami-0a36eb8fadc976275"
 
   instance_type = "t2.micro"
   name = "Wordpress-node-LC"
@@ -454,7 +460,7 @@ resource "aws_launch_configuration" "wordpress_node_lc" {
 }
 
 # Now create ASG for wordpress instances:
-resource "aws_autoscaling_group" "wordpress-auto-scaling-group" {
+resource "aws_autoscaling_group" "wordpress_auto_scaling_group" {
   name = "wordpress-instances-ASG"
   launch_configuration = aws_launch_configuration.wordpress_node_lc.name
   max_size = 0
@@ -471,6 +477,7 @@ resource "aws_autoscaling_group" "wordpress-auto-scaling-group" {
   }
   target_group_arns = [
     aws_lb_target_group.wordpress_lb_target_group.arn]
+  depends_on = [aws_lb_target_group.wordpress_lb_target_group]
 }
 
 output "lb_dns_name" {
