@@ -318,15 +318,16 @@ resource "aws_efs_file_system" "wordpress_efs" {
 //}
 
 # Now create EFS mount targets for both subnets:
+# we'll create EFS mount targets in PRIVATE subnets, so:
 # For A subnet private app:
 resource "aws_efs_mount_target" "wordpress_target_subnet_A_private_app" {
   file_system_id = aws_efs_file_system.wordpress_efs.id
-  subnet_id = aws_subnet.subnet_A_private_app.id
+  subnet_id = aws_subnet.subnet_A_private_data.id
 }
 # For B subnet private app:
 resource "aws_efs_mount_target" "wordpress_target_subnet_B_private_app" {
   file_system_id = aws_efs_file_system.wordpress_efs.id
-  subnet_id = aws_subnet.subnet_B_private_app.id
+  subnet_id = aws_subnet.subnet_B_private_data.id
 }
 
 # ======= Creating Application Load Balancer (ALB) for wordpress scaling group =======
