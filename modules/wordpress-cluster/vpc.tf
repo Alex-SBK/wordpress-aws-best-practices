@@ -177,7 +177,7 @@ resource "aws_launch_configuration" "wp_bastion_host_lc" {
   lifecycle {
     create_before_destroy = false
   }
-  provisioner "file" {}
+
 }
 
 # Now create Auto scaling group for bastion host

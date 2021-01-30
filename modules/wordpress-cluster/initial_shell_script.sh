@@ -17,5 +17,5 @@ sudo chkconfig httpd on
 
 sudo yum install -y amazon-efs-utils
 sudo mkdir "/efs"
-sudo mount -t efs -o tls ${efs_id}:/ /efs
+sudo mount -t efs -o tls "${efs_id}":/ /efs
 

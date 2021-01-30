@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+    # Install mc
+    - name: Install MC
+      yum:
+        name: mc
+        state: 'latest'
