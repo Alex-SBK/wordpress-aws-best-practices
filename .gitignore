@@ -8,3 +8,4 @@
 *.code-workspace
 *.idea
 user_data.sh
+*.log
