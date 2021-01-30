@@ -63,9 +63,9 @@ resource "aws_security_group" "web_access" {
   }
 }
 
-# =======================
+# ========================
 # Security group for EFS
-# =======================
+# ========================
 
 resource "aws_security_group" "efs_security_group" {
   name = "EFS_security_group"
