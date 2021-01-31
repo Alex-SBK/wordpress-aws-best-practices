@@ -1,8 +1,19 @@
 #!/bin/bash
-sudo yum -y update
-sudo yum install -y amazon-efs-utils
-sudo mkdir "/efs"
-sudo mount -t efs -o tls "${efs_id}":/ /efs
+yum -y update
+yum install -y amazon-efs-utils
+mkdir "/efs"
+mount -t efs -o tls "${efs_id}":/ /efs
+
+#cd /home/ec2-user
+#wget https://wordpress.org/latest.tar.gz
+#tar -xzf latest.tar.gz
+#cp -r wordpress/* /efs
+#cp /var/www/html/wp-config-sample.php /var/www/html/wp-config.php
+#rm -rf wordpress
+#rm -rf latest.tar.gz
+
+
+
 
 
 sudo mkdir /secrets

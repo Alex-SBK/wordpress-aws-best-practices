@@ -239,7 +239,7 @@ resource "aws_lb_target_group" "wordpress_lb_target_group" {
   protocol = "HTTP"
   vpc_id = aws_vpc.vpc_for_wordpress.id
   health_check {
-    path = "/"
+    path = "/index.php"
     protocol = "HTTP"
     matcher = "200"
     interval = 15
@@ -270,7 +270,10 @@ resource "aws_lb_listener_rule" "wordpress" {
 
 # Next: create launch config for wordpress instances autoscaling group:
 resource "aws_launch_configuration" "wordpress_node_lc" {
-  depends_on = [aws_efs_mount_target.subnet_B_private_app]
+  depends_on = [
+    aws_efs_mount_target.subnet_B_private_app,
+    aws_efs_mount_target.subnet_A_private_app
+  ]
   image_id = "ami-0a36eb8fadc976275"
   instance_type = "t2.micro"
   name = "Wordpress-node-LC"

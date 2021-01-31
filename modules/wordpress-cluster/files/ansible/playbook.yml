@@ -1,0 +1,39 @@
+---
+- hosts: all
+  become: yes
+
+  tasks:
+
+    # Create temporary directory
+    - name: Create temporary terraform directory
+      file:
+        path: /teraform_temp
+        state: directory
+
+    # Download latest wordpress to home
+    - name: Latest wordpress download
+      get_url:
+        url: https://wordpress.org/latest.tar.gz
+        dest: /teraform_temp/latest.tar.gz
+
+    # Unarchive wordpress
+    - name: Unarhive wordpress
+      unarchive:
+        src: /teraform_temp/latest.tar.gz
+        dest: /teraform_temp
+        remote_src: true
+
+    - name: Copy wordpress files to EFS share
+      shell:
+        cmd: cp -r /teraform_temp/wordpress/* /efs
+      args:
+        executable: /bin/bash
+
+    - name: Recursively remove terraform dir
+      file:
+        path: /teraform_temp
+        state: absent
+
+
+
+
