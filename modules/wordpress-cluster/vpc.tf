@@ -325,61 +325,62 @@ resource "aws_autoscaling_group" "wordpress_auto_scaling_group" {
 # ======= AWS RDS Database =======
 # --------------------------------
 
-//# Create database subnet group:
-//resource "aws_db_subnet_group" "wordpress_db_subn_group" {
-//  subnet_ids = [
-//    aws_subnet.subnet_A_private_data.id
-//  ]
-//  name = "wordpressgrp"
-//  tags = {
-//    Name = "wordpress-sbnе-grp"
-//  }
-//}
-//
-//# Create security group for RDS
-//resource "aws_security_group" "wordpress_maria_database" {
-//  name = "wordpress_DB_SG"
-//  description = "managed by terraform for wordpress database"
-//  vpc_id = aws_vpc.vpc_for_wordpress.id
-//  tags = {
-//    Name = "wrdpss_maria_db_SG"
-//  }
-//
-//  ingress {
-//    from_port = 3306
-//    protocol = "tcp"
-//    to_port = 3306
-//    cidr_blocks = ["0.0.0.0/0"]
-//    security_groups = [aws_security_group.web_access.id]
-//   }
-//  ingress {
-//    protocol    = "icmp"
-//    from_port   = -1
-//    to_port     = -1
-//    cidr_blocks = [aws_vpc.vpc_for_wordpress.cidr_block]
-//    description = "PING from inside"
-//  }
-//  egress {
-//    from_port = 0
-//    protocol = "-1"
-//    to_port = 0
-//    cidr_blocks = ["0.0.0.0/0"]
-//  }
-//}
-//
-//resource "aws_db_instance" "mariadb_wordpress" {
-//  allocated_storage = 20
-//  storage_type = "gp2"
-//  engine = "mariadb"
-//  engine_version = "10.1.14"
-//  instance_class = "db.t2.micro"
-//  name = "mariadb"
-//  username = "root"
-//  password = var.password
-//  vpc_security_group_ids = [aws_security_group.wordpress_maria_database.id]
-//  db_subnet_group_name = aws_db_subnet_group.wordpress_db_subn_group.name
-//  skip_final_snapshot = true
-//}
+# Create database subnet group:
+resource "aws_db_subnet_group" "wordpress_db_subn_group" {
+  subnet_ids = [
+    aws_subnet.subnet_A_private_data.id,
+    aws_subnet.subnet_B_private_data.id
+  ]
+  name = "wordpress-database-subnet-group"
+  tags = {
+    Name = "wordpress-database-subnet-group"
+  }
+}
+
+# Create security group for RDS
+resource "aws_security_group" "wordpress_maria_database" {
+  name = "wordpress_DB_SG"
+  description = "managed by terraform for wordpress database"
+  vpc_id = aws_vpc.vpc_for_wordpress.id
+  tags = {
+    Name = "wrdpss_maria_db_SG"
+  }
+
+  ingress {
+    from_port = 3306
+    protocol = "tcp"
+    to_port = 3306
+    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.web_access.id]
+   }
+  ingress {
+    protocol    = "icmp"
+    from_port   = -1
+    to_port     = -1
+    cidr_blocks = [aws_vpc.vpc_for_wordpress.cidr_block]
+    description = "PING from inside"
+  }
+  egress {
+    from_port = 0
+    protocol = "-1"
+    to_port = 0
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_db_instance" "mariadb_wordpress" {
+  allocated_storage = 20
+  storage_type = "gp2"
+  engine = "mariadb"
+  engine_version = "10.4.8"
+  instance_class = "db.t2.micro"
+  name = var.dbname
+  username = var.username
+  password = var.password
+  vpc_security_group_ids = [aws_security_group.wordpress_maria_database.id]
+  db_subnet_group_name = aws_db_subnet_group.wordpress_db_subn_group.name
+  skip_final_snapshot = true
+}
 
 
 

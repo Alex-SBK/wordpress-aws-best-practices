@@ -23,16 +23,24 @@
         dest: /teraform_temp
         remote_src: true
 
+    # Copy files to EFS share
     - name: Copy wordpress files to EFS share
       shell:
         cmd: cp -r /teraform_temp/wordpress/* /efs
       args:
         executable: /bin/bash
 
+    # Remove terraform dir
     - name: Recursively remove terraform dir
       file:
         path: /teraform_temp
         state: absent
+
+    # Copy rendered by terraform wp-config.php  file
+    - name: Copying wp-config.php
+      copy:
+        src: "../misc/wp-config.php"
+        dest: "/efs"
 
 
 

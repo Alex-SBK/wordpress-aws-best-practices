@@ -10,6 +10,18 @@ variable "password" {
   default = "123456Aa=="
 }
 
+variable "username" {
+  description = "Database root username"
+  type = string
+  default = "root"
+}
+
+variable "dbname" {
+  description = "Database name for wordpress"
+  type = string
+  default = "wordpress_base"
+}
+
 variable "bastion_amount" {
   description = "Amount of bastion hosts"
   type = number
