@@ -6,4 +6,5 @@ module "wordpress-cluster" {
   server_port = 80
   username = "rhombus"
   password = "123456Aa##"
+  pem_key_name = "oregon.pem"
 }

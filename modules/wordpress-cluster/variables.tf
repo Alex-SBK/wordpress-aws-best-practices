@@ -33,3 +33,9 @@ variable "wordpress_inst_amount" {
   type = number
   default = 2
 }
+
+variable "pem_key_name" {
+  description = "name of pem key for ssh access to bastion and wordpress instances"
+  type = string
+  default = "oregon.pem"
+}
