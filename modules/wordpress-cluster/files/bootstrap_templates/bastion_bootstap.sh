@@ -4,9 +4,8 @@ yum install -y amazon-efs-utils
 mkdir "/efs"
 mount -t efs -o tls "${efs_id}":/ /efs
 
-
 sudo mkdir /secrets
-sudo cat << EOF > /home/ec2-user/key.pem
+sudo cat <<EOF >/home/ec2-user/key.pem
 -----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEAo4R88uWT0hoHqLVWxs0v1dQ6cRTLOg0sMS+qRme6IDAC62wL
 7F0+d2+NA2N/6kbvUk6wkegt9q5K9m3kkGG7W6792zxVOZ0VREZGb7y8X4vSsKqL
@@ -37,4 +36,3 @@ spnf1ELb6T621dr8i+JtqRnkLTIsrio58fRXvjA4z5FoVz2lTl0b
 EOF
 
 sudo chmod 400 /home/ec2-user/key.pem
-

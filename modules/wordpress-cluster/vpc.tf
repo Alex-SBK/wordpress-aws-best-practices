@@ -159,7 +159,7 @@ resource "aws_subnet" "subnet_B_private_data" {
 # Create launch config for bastion hosts autoscaling group
 resource "aws_launch_configuration" "wp_bastion_host_lc" {
   depends_on = [aws_efs_mount_target.subnet_B_private_app]
-   user_data = templatefile("bastion_boot_start.sh", {
+   user_data = templatefile("${path.module}/files/bootstrap_templates/bastion_bootstap.sh", {
     efs_id = aws_efs_file_system.wordpress_efs.id
   })
   image_id = "ami-0a36eb8fadc976275"
@@ -289,8 +289,7 @@ resource "aws_launch_configuration" "wordpress_node_lc" {
   # In this initial script we'll do the next:
   # 1) setup apache
   # 2) mount efs target
-  # 3) install wordpress
-  user_data = templatefile("initial_shell_script.sh", {
+  user_data = templatefile("${path.module}/files/bootstrap_templates/web_server_bootstrap.sh", {
     efs_id = aws_efs_file_system.wordpress_efs.id
   })
 
