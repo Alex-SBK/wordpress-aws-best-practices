@@ -20,7 +20,7 @@ data "template_file" "inventory" {
   template = file("${path.module}/files/ansible/inventory.tpl")
   vars = {
     bastion_ip = data.aws_instance.bastion_info.public_ip
-    path_to_ssh_pem_key = "${path.root}/ssh_private_keys/${var.pem_key_name}"
+    path_to_ssh_pem_key = "${path.cwd}/ssh_private_keys/${var.pem_key_name}"
   }
 }
 

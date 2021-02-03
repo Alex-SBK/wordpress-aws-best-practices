@@ -3,4 +3,4 @@
 
 # Bastion Host IP address
 
-${bastion_ip} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=${path_to_ssh_pem_key}
+${bastion_ip} ansible_ssh_user=ec2-user ansible_ssh_private_key_file=/home/alex/Learn/terra/wordpress-aws-best-practices/ssh_private_keys/oregon.pem
